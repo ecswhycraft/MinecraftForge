@@ -1,16 +1,17 @@
 --- ../src_base/common/net/minecraft/src/WorldServer.java
 +++ ../src_work/common/net/minecraft/src/WorldServer.java
-@@ -10,6 +10,9 @@
+@@ -10,6 +10,10 @@
  import java.util.Set;
  import java.util.TreeSet;
  import net.minecraft.server.MinecraftServer;
 +import net.minecraftforge.common.DimensionManager;
++import net.minecraftforge.common.ForgeHooks;
 +import net.minecraftforge.common.MinecraftForge;
 +import net.minecraftforge.event.world.WorldEvent;
  
  public class WorldServer extends World
  {
-@@ -71,6 +74,7 @@
+@@ -71,6 +75,7 @@
          {
              this.pendingTickListEntries = new TreeSet();
          }
@@ -18,7 +19,27 @@
      }
  
      /**
-@@ -559,15 +563,27 @@
+@@ -362,7 +367,8 @@
+     public void scheduleBlockUpdate(int par1, int par2, int par3, int par4, int par5)
+     {
+         NextTickListEntry var6 = new NextTickListEntry(par1, par2, par3, par4);
+-        byte var7 = 8;
++        boolean isForced = persistentChunks.containsKey(new ChunkCoordIntPair(var6.xCoord >> 4, var6.zCoord >> 4));
++        byte var7 = isForced ? (byte)0 : 8;
+ 
+         if (this.scheduledUpdatesAreImmediate)
+         {
+@@ -462,7 +468,8 @@
+ 
+                 this.pendingTickListEntries.remove(var4);
+                 this.field_73064_N.remove(var4);
+-                byte var5 = 8;
++                boolean isForced = persistentChunks.containsKey(new ChunkCoordIntPair(var4.xCoord >> 4, var4.zCoord >> 4));
++                byte var5 = isForced ? (byte)0 : 8;
+ 
+                 if (this.checkChunksExist(var4.xCoord - var5, var4.yCoord - var5, var4.zCoord - var5, var4.xCoord + var5, var4.yCoord + var5, var4.zCoord + var5))
+                 {
+@@ -559,15 +566,27 @@
      public List getAllTileEntityInBox(int par1, int par2, int par3, int par4, int par5, int par6)
      {
          ArrayList var7 = new ArrayList();
@@ -44,7 +65,7 @@
 +                        TileEntity entity = (TileEntity)obj;
 +                        if (!entity.isInvalid())
 +                        {
-+                            if (entity.xCoord >= par1 && entity.yCoord >= par2 && entity.zCoord >= par3 && 
++                            if (entity.xCoord >= par1 && entity.yCoord >= par2 && entity.zCoord >= par3 &&
 +                                entity.xCoord <= par4 && entity.yCoord <= par5 && entity.zCoord <= par6)
 +                            {
 +                                var7.add(entity);
@@ -55,7 +76,7 @@
              }
          }
  
-@@ -587,7 +603,7 @@
+@@ -587,7 +606,7 @@
              var6 = var5;
          }
  
@@ -64,7 +85,16 @@
      }
  
      protected void initialize(WorldSettings par1WorldSettings)
-@@ -710,6 +726,7 @@
+@@ -702,6 +721,8 @@
+                 par2IProgressUpdate.displayProgressMessage("Saving level");
+             }
+ 
++            ForgeHooks.dumpPersistentChunks(worldInfo, persistentChunks);
++
+             this.saveLevel();
+ 
+             if (par2IProgressUpdate != null)
+@@ -710,6 +731,7 @@
              }
  
              this.chunkProvider.saveChunks(par1, par2IProgressUpdate);
